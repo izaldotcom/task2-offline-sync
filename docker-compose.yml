@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  sync-api:
+    build: .
+    container_name: task2-sync-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
