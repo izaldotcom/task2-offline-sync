@@ -78,8 +78,15 @@ func (s *SyncService) processPatient(record models.SyncRecord) models.RecordResu
 		return models.RecordResult{ClientUUID: record.ClientUUID, Status: "rejected", Reason: "missing required field: name"}
 	}
 
-	// Rule 4: Handle missing NIK or duplicate names (Fuzzy match mock)
+	// Rule 4: Handle missing NIK or duplicate names (Fuzzy match mock)``
 	if data.NIK == "0000000000000000" || data.NIK == "" {
+		s.DB.Conn.Exec(
+			"INSERT INTO review_queue (type, reason, created_at) VALUES (?, ?, ?)",
+			"possible_duplicate_patient",
+			"Similar name and birth date",
+			time.Now().UTC().Format(time.RFC3339),
+		)
+
 		return models.RecordResult{
 			ClientUUID:        record.ClientUUID,
 			Status:            "flagged_possible_duplicate_patient",
@@ -136,4 +143,38 @@ func (s *SyncService) ResetDatabase(req models.ResetRequest) error {
 		s.DB.Conn.Exec("INSERT INTO medicines (medicine_id, name, stock) VALUES (?, ?, ?)", med.MedicineID, med.Name, med.Quantity)
 	}
 	return nil
+}
+
+// GetStock retrieves the current stock of a medicine
+func (s *SyncService) GetStock(medicineID string) (int, error) {
+	var stock int
+	err := s.DB.Conn.QueryRow("SELECT stock FROM medicines WHERE medicine_id = ?", medicineID).Scan(&stock)
+	return stock, err
+}
+
+// GetReviewQueue retrieves all flagged items
+func (s *SyncService) GetReviewQueue() []models.ReviewQueueItem {
+	rows, _ := s.DB.Conn.Query("SELECT type, medicine_id, current_stock, reason, created_at FROM review_queue")
+	defer rows.Close()
+
+	var items []models.ReviewQueueItem
+	for rows.Next() {
+		var item models.ReviewQueueItem
+		// Use specific types to handle NULL values from DB if any
+		var medID, reason *string
+		var curStock *int
+
+		rows.Scan(&item.Type, &medID, &curStock, &reason, &item.CreatedAt)
+		
+		if medID != nil { item.MedicineID = *medID }
+		if curStock != nil { item.CurrentStock = *curStock }
+		if reason != nil { item.Reason = *reason }
+
+		items = append(items, item)
+	}
+
+	if items == nil {
+		items = []models.ReviewQueueItem{} // Ensure it returns [] instead of null
+	}
+	return items
 }

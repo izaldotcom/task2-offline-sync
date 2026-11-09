@@ -55,3 +55,26 @@ func (ctrl *SyncController) HandleReset(c echo.Context) error {
 		"medicines": len(req.Stock),
 	})
 }
+
+// GET /stock/:id
+func (ctrl *SyncController) HandleGetStock(c echo.Context) error {
+	medID := c.Param("id")
+	stock, err := ctrl.Service.GetStock(medID)
+	
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"detail": "Medicine not found"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"medicine_id":   medID,
+		"current_stock": stock,
+	})
+}
+
+// GET /review-queue
+func (ctrl *SyncController) HandleGetReviewQueue(c echo.Context) error {
+	items := ctrl.Service.GetReviewQueue()
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"items": items,
+	})
+}

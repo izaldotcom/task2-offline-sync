@@ -39,6 +39,8 @@ func main() {
 	// API Routes
 	e.POST("/sync", syncController.HandleSync)
 	e.POST("/reset", syncController.HandleReset)
+	e.GET("/stock/:id", syncController.HandleGetStock)
+	e.GET("/review-queue", syncController.HandleGetReviewQueue)
 
 	// Start server on port 8000
 	log.Println("Starting Server on Port 8000...")

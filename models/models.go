@@ -65,3 +65,14 @@ type ResetRequest struct {
 		Quantity   int    `json:"quantity"`
 	} `json:"stock"`
 }
+
+// ReviewQueueItem represents an item flagged for human review
+type ReviewQueueItem struct {
+	Type              string `json:"type"`
+	NewPatientID      string `json:"new_patient_id,omitempty"`
+	ExistingPatientID string `json:"existing_patient_id,omitempty"`
+	MedicineID        string `json:"medicine_id,omitempty"`
+	CurrentStock      int    `json:"current_stock,omitempty"`
+	Reason            string `json:"reason,omitempty"`
+	CreatedAt         string `json:"created_at"`
+}
